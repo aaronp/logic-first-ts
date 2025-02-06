@@ -8,27 +8,45 @@ import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions'
 import { BunyanInstrumentation } from '@opentelemetry/instrumentation-bunyan';
 import { registerInstrumentations } from '@opentelemetry/instrumentation';
 
-// Initialize the tracer provider
-const provider = new NodeTracerProvider({
-  resource: new Resource({
-    [SemanticResourceAttributes.SERVICE_NAME]: 'bun-cli-app',
-  }),
-});
+let _initialised = false
+const init = () => {]
+    if (_initialised) {
+        return 
+    }
+    console.log('initialising')
+    // Initialize the tracer provider
+    const provider = new NodeTracerProvider({
+        resource: new Resource({
+        [SemanticResourceAttributes.SERVICE_NAME]: 'bun-cli-app',
+        }),
+    });
+    
+    // Use OTLP exporter to export traces to a local file
+    const exporter = new OTLPTraceExporter({
+        url: 'http://localhost:4318/v1/traces', // OTLP HTTP endpoint
+    });
+    
+    provider.addSpanProcessor(new SimpleSpanProcessor(exporter));
+    provider.register();
+    
+    // Register instrumentations
+    registerInstrumentations({
+        instrumentations: [new BunyanInstrumentation()],
+    });
+    _initialised = true
+    console.log('initialised')
+}
+let _tracerCached: Tracer | null = null
 
-// Use OTLP exporter to export traces to a local file
-const exporter = new OTLPTraceExporter({
-  url: 'http://localhost:4318/v1/traces', // OTLP HTTP endpoint
-});
+const tracer = () : Tracer => {
+    if (_tracerCached) {
+        return _tracerCached
+    }
+    init()
+    _tracerCached = trace.getTracer('bun-cli-app');
+    return _tracerCached
+}
 
-provider.addSpanProcessor(new SimpleSpanProcessor(exporter));
-provider.register();
-
-// Register instrumentations
-registerInstrumentations({
-  instrumentations: [new BunyanInstrumentation()],
-});
-
-const tracer: Tracer = trace.getTracer('bun-cli-app');
 /**
  * A utility function to wrap a block of code in an OpenTelemetry span.
  *
@@ -39,10 +57,10 @@ const tracer: Tracer = trace.getTracer('bun-cli-app');
  */
 export const traced = <T>(name: string, args: any[], thunk: () => T): T => {
   // Get the current tracer
-  const tracer = trace.getTracer('traced-utility');
+  
 
   // Start a new span
-  return tracer.startActiveSpan(name, (span: Span) => {
+  return tracer().startActiveSpan(name, (span: Span) => {
     try {
       // Add arguments as attributes to the span
       args.forEach((arg, index) => {
@@ -61,9 +79,9 @@ export const traced = <T>(name: string, args: any[], thunk: () => T): T => {
       // Mark the span as failed and record the error
       span.setStatus({
         code: SpanStatusCode.ERROR,
-        message: error.message,
+        message: `${error}`,
       });
-      span.recordException(error);
+      span.recordException(`${error}`);
 
       // Re-throw the error to propagate it
       throw error;
