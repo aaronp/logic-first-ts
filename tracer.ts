@@ -1,5 +1,5 @@
 
-import { trace, Span, Tracer, SpanStatusCode } from '@opentelemetry/api';
+import { trace, type Span, type Tracer, SpanStatusCode } from '@opentelemetry/api';
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import { SimpleSpanProcessor } from '@opentelemetry/sdk-trace-base';
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
@@ -9,7 +9,7 @@ import { BunyanInstrumentation } from '@opentelemetry/instrumentation-bunyan';
 import { registerInstrumentations } from '@opentelemetry/instrumentation';
 
 let _initialised = false
-const init = () => {]
+const init = () => {
     if (_initialised) {
         return 
     }
