@@ -38,6 +38,7 @@ const init = () => {
 }
 let _tracerCached: Tracer | null = null
 
+
 const tracer = () : Tracer => {
     if (_tracerCached) {
         return _tracerCached
@@ -55,7 +56,7 @@ const tracer = () : Tracer => {
  * @param thunk - A function to execute within the span.
  * @returns The result of the `thunk` function.
  */
-export const traced = <T>(name: string, args: any[], thunk: () => T): T => {
+export const traced = <T>(from : Container, to :Container, name: string, args: any[], thunk: () => T): T => {
   // Get the current tracer
   
 
@@ -64,8 +65,23 @@ export const traced = <T>(name: string, args: any[], thunk: () => T): T => {
     try {
       // Add arguments as attributes to the span
       args.forEach((arg, index) => {
-        span.setAttribute(`arg${index}`, JSON.stringify(arg));
+        span.setAttribute(`arg${index}`, typeof arg === 'string' ? arg : JSON.stringify(arg));
       });
+
+      span.setAttribute('fromSystem', from.softwareSystem)
+      span.setAttribute('fromLabel', from.label)
+      span.setAttribute('fromType', from.type)
+      from.tags.forEach((arg, index) => {
+        span.setAttribute(`from-tag-${index}`, arg);
+      });
+
+      span.setAttribute('toSystem', to.softwareSystem)
+      span.setAttribute('toLabel', to.label)
+      span.setAttribute('toType', to.type)
+      to.tags.forEach((arg, index) => {
+        span.setAttribute(`to-tag-${index}`, arg);
+      });
+
 
       // Execute the thunk (the actual function to trace)
       const result = thunk();

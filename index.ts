@@ -1,9 +1,13 @@
-import { traced } from "./tracer";
+import { newPerson, newSystem, traced } from "./tracer";
 
+
+const person = newPerson('app', 'dave')
+const sys = newSystem('app', 'parser')
+const goog = newSystem('app', 'google')
 
 // Function to perform a Google search
 async function googleSearch(query: string) {
-  const span = await traced('googleSearch', [query], async () => {
+  const span = await traced(sys, goog, 'googleSearch', [query], async () => {
     const response = await fetch(`https://www.google.com/search?q=${encodeURIComponent(query)}`);
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
@@ -14,9 +18,10 @@ async function googleSearch(query: string) {
   return span
 }
 
+
 // Function to parse user input and split it into words
 async function parseInput(input: string) {
-  return await traced('parse', [input], async () => await googleSearch(input));
+  return await traced(person, sys, 'parse', [input], async () => await googleSearch(input));
 }
 
 // Main function
