@@ -1,14 +1,14 @@
-import { Timestamp } from "./timestamp"; // Assuming you have a Timestamp type/class
-import { Container } from "./container"; // Assuming you have a Container type/class
-import { CompletedCall, CallResponse } from "./completedCall"; // Assuming you have these types
+import { durationOfCall, endTimestamp, qualified, timestampForCall, type CompletedCall, type Container, type Timestamp } from "./telemetry";
 
 // Duration type (assuming it's a number representing milliseconds)
 type Duration = number;
 
 /**
- * Representation of a message being sent from one actor to another.
+ * Representation of a message being sent from one actor to another -- an enriched intermediary repsesentation of the open-telemtry message
+ * suited for converting to diagrams
+ * 
  */
-class SendMessage {
+export class SendMessage {
   constructor(
     public callId: number,
     public from: Container,
@@ -25,7 +25,7 @@ class SendMessage {
    * Returns the timestamp as a JavaScript Date object.
    */
   get atDateTime(): Date {
-    return new Date(this.timestamp.asMillis);
+    return new Date(this.timestamp * 1000);
   }
 
   /**
@@ -40,7 +40,7 @@ class SendMessage {
    * Converts this operation to a Mermaid string.
    */
   asMermaidString(maxLenComment: number = 20, maxComment: number = 30): string {
-    return `${this.from.qualified} ${this.arrow} ${this.to.qualified} : ${this.msg(maxLenComment, maxComment)}`;
+    return `${qualified(this.from)} ${this.arrow} ${qualified(this.to)} : ${this.msg(maxLenComment, maxComment)}`;
   }
 
   /**
@@ -48,28 +48,28 @@ class SendMessage {
    */
   asPlantUMLString(maxLenComment: number = 20, maxComment: number = 30): string {
     const planUMLArrow = this.arrow.replace("->>+", "->").replace("->>", "->").replace("-->>", "-->").replace("-->>-", "-->");
-    return `${this.from.qualified} ${planUMLArrow} ${this.to.qualified} : ${this.msg(maxLenComment, maxComment)}`;
+    return `${qualified(this.from)} ${planUMLArrow} ${qualified(this.to)} : ${this.msg(maxLenComment, maxComment)}`;
   }
 
   /**
    * Returns a pretty-printed string representation of the message.
    */
   get pretty(): string {
-    return `${this.timestamp.asNanos}@${this.callId}: ${this.from}:${this.operation} ${this.arrow} ${this.to} w/ ${this.input} took ${this.duration} at ${this.atDateTime}`;
+    return `${this.timestamp}@${this.callId}: ${this.from}:${this.operation} ${this.arrow} ${this.to} w/ ${this.input} took ${this.duration} at ${this.atDateTime}`;
   }
 
   /**
    * Returns the end timestamp of the message.
    */
   get endTimestamp(): Timestamp {
-    return new Timestamp(this.timestamp.asNanos + this.duration * 1e6); // Convert duration to nanoseconds
+    return this.timestamp + (this.duration * 1e6); // Convert duration to nanoseconds
   }
 
   /**
    * Checks if the message is active at the given time.
    */
   isActiveAt(time: Timestamp): boolean {
-    return this.timestamp.asNanos <= time.asNanos && time.asNanos <= this.endTimestamp.asNanos;
+    return this.timestamp <= time && time <= this.endTimestamp;
   }
 
   /**
@@ -130,7 +130,7 @@ class SendMessage {
 /**
  * Utility functions for SendMessage.
  */
-namespace SendMessage {
+export namespace SendMessage {
   type OrderedCategories = string[];
   type ActorsByCategory = Map<string, Container[]>;
 
@@ -139,32 +139,34 @@ namespace SendMessage {
    */
   export function participants(all: CompletedCall[]): [OrderedCategories, ActorsByCategory] {
     return all
-      .sort((a, b) => a.timestamp.asNanos - b.timestamp.asNanos)
+      .sort((a, b) => timestampForCall(a) - timestampForCall(b))
       .reduce(
         ([categories, coordsByCategory], call) => {
           const newMap = new Map(coordsByCategory);
 
+          const source = call.invocation.action.source
+          const target = call.invocation.action.target
           // Update source
-          if (!newMap.has(call.source.softwareSystem)) {
-            newMap.set(call.source.softwareSystem, [call.source]);
-          } else if (!newMap.get(call.source.softwareSystem)!.includes(call.source)) {
-            newMap.get(call.source.softwareSystem)!.push(call.source);
+          if (!newMap.has(source.softwareSystem)) {
+            newMap.set(source.softwareSystem, [source]);
+          } else if (!newMap.get(source.softwareSystem)!.includes(source)) {
+            newMap.get(source.softwareSystem)!.push(source);
           }
 
           // Update target
-          if (!newMap.has(call.target.softwareSystem)) {
-            newMap.set(call.target.softwareSystem, [call.target]);
-          } else if (!newMap.get(call.target.softwareSystem)!.includes(call.target)) {
-            newMap.get(call.target.softwareSystem)!.push(call.target);
+          if (!newMap.has(target.softwareSystem)) {
+            newMap.set(target.softwareSystem, [target]);
+          } else if (!newMap.get(target.softwareSystem)!.includes(target)) {
+            newMap.get(target.softwareSystem)!.push(target);
           }
 
           // Update categories
           const newCategories = [...categories];
-          if (!newCategories.includes(call.source.softwareSystem)) {
-            newCategories.push(call.source.softwareSystem);
+          if (!newCategories.includes(source.softwareSystem)) {
+            newCategories.push(source.softwareSystem);
           }
-          if (!newCategories.includes(call.target.softwareSystem)) {
-            newCategories.push(call.target.softwareSystem);
+          if (!newCategories.includes(target.softwareSystem)) {
+            newCategories.push(target.softwareSystem);
           }
 
           return [newCategories, newMap];
@@ -211,8 +213,9 @@ namespace SendMessage {
     for (const call of calls) {
       messages.push({ type: MsgType.Start, call });
 
-      if (call.endTimestamp) {
-        messages.push({ type: MsgType.End, call, endTimestamp: call.endTimestamp });
+      const endTime = endTimestamp(call)
+      if (endTime) {
+        messages.push({ type: MsgType.End, call, endTimestamp: endTime });
       }
     }
 
@@ -221,8 +224,11 @@ namespace SendMessage {
 
     // Convert messages to SendMessage objects
     return messages.flatMap((msg, i) => {
+      const source = msg.call.invocation.action.source
+      const target = msg.call.invocation.action.target
       if (msg.type === MsgType.Start) {
-        const isSelfCall = msg.call.source === msg.call.target;
+        const timestamp = timestampForCall(msg.call)
+        const isSelfCall = source === target;
         const isSynchronous = messages[i + 1]?.type === MsgType.End && messages[i + 1].call.callId === msg.call.callId;
 
         const arrow = isSelfCall ? "->>" : isSynchronous ? "->>" : "->>+";
@@ -234,13 +240,13 @@ namespace SendMessage {
           return [
             new SendMessage(
               msg.call.callId,
-              msg.call.source,
-              msg.call.target,
-              msg.call.timestamp,
-              msg.call.duration || Infinity,
+              source,
+              target,
+              timestamp,
+              durationOfCall(msg.call) || Infinity,
               arrow,
-              msg.call.operation,
-              msg.call.input
+              msg.call.invocation.action.operation,
+              msg.call.invocation.inputs
             ),
           ];
         }
@@ -248,7 +254,7 @@ namespace SendMessage {
         const isSynchronous = messages[i - 1]?.type === MsgType.Start && messages[i - 1].call.callId === msg.call.callId;
 
         const comment = isSynchronous
-          ? `${msg.call.operation} -> ${commentForResult(msg.call)}`
+          ? `${msg.call.invocation.action.operation} -> ${commentForResult(msg.call)}`
           : commentForResult(msg.call);
 
         const arrow = isSynchronous ? "-->>" : "-->>-";
@@ -256,13 +262,13 @@ namespace SendMessage {
         return [
           new SendMessage(
             msg.call.responseId || Number.MAX_SAFE_INTEGER,
-            msg.call.target,
-            msg.call.source,
+            target,
+            source,
             msg.endTimestamp!,
-            msg.call.duration || Infinity,
+            durationOfCall(msg.call) || Infinity,
             arrow,
-            msg.call.operation,
-            msg.call.input,
+            msg.call.invocation.action.operation,
+            msg.call.invocation.inputs,
             comment
           ),
         ];

@@ -7,13 +7,14 @@ import { Resource } from '@opentelemetry/resources';
 import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions';
 import { BunyanInstrumentation } from '@opentelemetry/instrumentation-bunyan';
 import { registerInstrumentations } from '@opentelemetry/instrumentation';
+import type { Container } from './telemetry';
+import { AtomicCounter } from './callId';
 
 let _initialised = false
 const init = () => {
     if (_initialised) {
         return 
     }
-    console.log('initialising')
     // Initialize the tracer provider
     const provider = new NodeTracerProvider({
         resource: new Resource({
@@ -34,7 +35,6 @@ const init = () => {
         instrumentations: [new BunyanInstrumentation()],
     });
     _initialised = true
-    console.log('initialised')
 }
 let _tracerCached: Tracer | null = null
 
@@ -57,11 +57,10 @@ const tracer = () : Tracer => {
  * @returns The result of the `thunk` function.
  */
 export const traced = <T>(from : Container, to :Container, name: string, args: any[], thunk: () => T): T => {
-  // Get the current tracer
   
-
   // Start a new span
   return tracer().startActiveSpan(name, (span: Span) => {
+    const callId = AtomicCounter.getInstance().increment()
     try {
       // Add arguments as attributes to the span
       args.forEach((arg, index) => {
@@ -71,15 +70,16 @@ export const traced = <T>(from : Container, to :Container, name: string, args: a
       span.setAttribute('fromSystem', from.softwareSystem)
       span.setAttribute('fromLabel', from.label)
       span.setAttribute('fromType', from.type)
-      from.tags.forEach((arg, index) => {
-        span.setAttribute(`from-tag-${index}`, arg);
+      span.setAttribute('callId', callId);
+      Array.from(from.tags).forEach((arg, index) => {
+        span.setAttribute(`from-tag-${index}`, JSON.stringify(arg));
       });
 
       span.setAttribute('toSystem', to.softwareSystem)
       span.setAttribute('toLabel', to.label)
       span.setAttribute('toType', to.type)
-      to.tags.forEach((arg, index) => {
-        span.setAttribute(`to-tag-${index}`, arg);
+      Array.from(to.tags).forEach((arg, index) => {
+        span.setAttribute(`to-tag-${index}`, JSON.stringify(arg));
       });
 
 

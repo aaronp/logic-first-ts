@@ -1,7 +1,8 @@
 
 export type ContainerType = "System" | "Database" | "Job" | "Person"
 
-type Timestamp = number;
+// epoch in nanoseconds
+export type Timestamp = number;
 
 
 // Action class
@@ -17,6 +18,31 @@ export type CallResponse =
   | { type: "Error"; operationId: number; timestamp: Timestamp; bang: any }
   | { type: "Completed"; operationId: number; timestamp: Timestamp; result: any };
 
+export const durationOfCall = (cc : CompletedCall) => {
+  const typ = cc.response.type
+  if (typ == "NotCompleted") {
+    return null
+  } else if (typ === "Error") {
+    return cc.response.timestamp - cc.invocation.timestamp
+  } else if (typ === "Completed") {
+    return cc.response.timestamp - cc.invocation.timestamp
+  } else {
+    throw new Error(`Bug - unhandled response: ${typ}`)
+  }
+}
+
+export const timestampForResponse = (cr :CallResponse) => {
+  if (cr.type == "NotCompleted") {
+    return null
+  } else if (cr.type === "Error") {
+    return cr.timestamp
+  } else if (cr.type === "Completed") {
+    return cr.timestamp
+  } else {
+    throw new Error(`Bug - unhandled: ${cr}`)
+  }
+}
+
 // CallSite class
 export type  CallSite = {
   action: Action;
@@ -25,13 +51,16 @@ export type  CallSite = {
 }
 
 // CompletedCall class
-interface CompletedCall {
+export type CompletedCall = {
   callId: number;
   responseId: number | null;
   invocation: CallSite;
   response: CallResponse;
 }
 
+export const endTimestamp = (cc :CompletedCall) => timestampForResponse(cc.response)
+
+export const timestampForCall = (c : CompletedCall) => c.invocation.timestamp
 
 export type Container = {
     type: ContainerType;
@@ -39,7 +68,9 @@ export type Container = {
     label: string;
     tags: Set<string>;
   }
-  
+
+ export const qualified = (c : Container) => `${c.softwareSystem}.${c.label}`
+
   const createContainer = (
     type: ContainerType,
     softwareSystem: string,
@@ -65,6 +96,17 @@ export type Container = {
   export const newPerson = (softwareSystem: string, label: string, tags?: Set<string>): Container =>
     createContainer("Person", softwareSystem, label, tags);
 
+  const parseArgs = (attributes: Record<string, any>) : string[] => {
+    let index = 0;
+    let tags : string[] = []
+    while (attributes[`arg${index}`]) {
+      let attribute = attributes[`arg${index}`]
+      const value = typeof attribute === 'string' ? attribute : JSON.stringify(attribute);
+      tags.push(value);
+      index++;
+    }
+    return tags
+  }
 export function parseOpenTelemetryJson(json: any): CompletedCall[] {
     const completedCalls: CompletedCall[] = [];
   
@@ -118,11 +160,15 @@ export function parseOpenTelemetryJson(json: any): CompletedCall[] {
             target,
             operation: span.name,
           };
+
+          const callId = attributes['callId']
   
+          let inputs = parseArgs(attributes)
+
           // Create CallSite
           const callSite: CallSite = {
             action,
-            inputs: JSON.parse(attributes.arg0 || "[]"),
+            inputs,
             timestamp: Math.floor(Number(span.startTimeUnixNano) / 1e6), // Convert to milliseconds
           };
   
@@ -134,7 +180,7 @@ export function parseOpenTelemetryJson(json: any): CompletedCall[] {
   
           // Create CompletedCall
           const completedCall: CompletedCall = {
-            callId: span.traceId,
+            callId: callId, //span.traceId,
             responseId: span.spanId,
             invocation: callSite,
             response: callResponse,

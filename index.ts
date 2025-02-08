@@ -1,5 +1,5 @@
-import { newPerson, newSystem, traced } from "./tracer";
-
+import { traced } from "./lib/tracer";
+import { newPerson, newSystem } from "./lib/telemetry";
 
 const person = newPerson('app', 'dave')
 const sys = newSystem('app', 'parser')
