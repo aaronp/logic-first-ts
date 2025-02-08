@@ -4,7 +4,7 @@ import { SendMessage } from "./sendMessage"; // Assuming you have this type
 /**
  * Utility class for generating Mermaid sequence diagrams.
  */
-class Mermaid {
+export class Mermaid {
   static DefaultMermaidStyle = `%%{init: {"theme": "dark",
     "themeVariables": {"primaryTextColor": "grey", "secondaryTextColor": "black", "fontFamily": "Arial", "fontSize": 14, "primaryColor": "#3498db"}}}%%`;
 

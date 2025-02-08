@@ -1,6 +1,13 @@
 import * as fs from "fs";
 import * as readline from "readline";
 import { parseOpenTelemetryJson, type CompletedCall } from "./telemetry";
+import { SendMessage } from "./sendMessage";
+
+
+export const parseCalls = async (filePath: string) : Promise<SendMessage[]> => {
+    const calls = await parseTelemetry(filePath)
+    return SendMessage.from(calls)
+}
 
 export const parseTelemetry = async (filePath: string) : Promise<CompletedCall[]> => {
     const lines = await readJsonLines(filePath)

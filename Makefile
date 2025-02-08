@@ -1,5 +1,7 @@
 run:
 	bun run index.ts
+diagram:
+	bun run flow.ts
 listen:
 	sh listen.sh
 watch:
