@@ -25,9 +25,19 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/aaronp/logic-first-ts.git"
+    "url": "git+https://github.com/aaronp/logic-first-ts.git"
   },
-  "keywords": ["typescript", "library", "bun", "logic-first", "logic", "c4", "mermaid", "plantuml"],
+  "keywords": [
+    "typescript",
+    "library",
+    "bun",
+    "logic-first",
+    "logic",
+    "c4",
+    "mermaid",
+    "plantuml"
+  ],
   "author": "Aaron Pritzlaff",
-  "license": "Apache-2.0"
+  "license": "Apache-2.0",
+  "version": "0.0.1"
 }
