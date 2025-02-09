@@ -1,6 +1,8 @@
 import { Mermaid } from "./lib/mermaid";
+import { PlantUML } from "./lib/plantUML";
 import { parseTelemetry, parseCalls } from "./lib/parse";
 import fs from 'fs'
+import { C4 } from "./lib/c4";
 
 // Main function
 async function main() {
@@ -14,8 +16,11 @@ async function main() {
   fs.writeFileSync('mermaid.md', mermaidDiagram);
 
 
-  const plant = new Mermaid(calls).asMermaid();
-  fs.writeFileSync('plant.puml', mermaidDiagram);
+  const plant = new PlantUML(calls).diagram("App");
+  fs.writeFileSync('plant.puml', plant);
+
+  const c4 = new C4(calls).diagram();
+  fs.writeFileSync('diagram.c4', c4);
 }
 
 // Run the main function

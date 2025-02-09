@@ -1,5 +1,6 @@
 import { qualified, type CompletedCall } from "./telemetry"; // Assuming you have this type
 import { SendMessage } from "./sendMessage"; // Assuming you have this type
+import { Colors } from "./colors";
 
 /**
  * Utility class for generating Mermaid sequence diagrams.
@@ -70,20 +71,4 @@ export class Mermaid {
         return `box ${color} ${category}\n\t${participants}\nend`;
       });
   }
-}
-
-/**
- * Utility class for named colors.
- */
-class Colors {
-  static namedColors = [
-    "#3498db", // Blue
-    "#e74c3c", // Red
-    "#2ecc71", // Green
-    "#f1c40f", // Yellow
-    "#9b59b6", // Purple
-    "#1abc9c", // Teal
-    "#e67e22", // Orange
-    "#34495e", // Dark Blue
-  ];
 }

@@ -51,7 +51,7 @@ const tracer = () : Tracer => {
 /**
  * A utility function to wrap a block of code in an OpenTelemetry span.
  *
- * @param name - The name of the span.
+ * @param name - The name of the span operation.
  * @param args - An array of arguments to be added as attributes to the span.
  * @param thunk - A function to execute within the span.
  * @returns The result of the `thunk` function.
@@ -102,7 +102,6 @@ export const traced = <T>(from : Container, to :Container, name: string, args: a
       // Re-throw the error to propagate it
       throw error;
     } finally {
-      // End the span
       span.end();
     }
   });
