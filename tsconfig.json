@@ -1,5 +1,9 @@
 {
   "compilerOptions": {
+    "outDir": "dist",
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
     // Enable latest features
     "lib": ["ESNext", "DOM"],
     "target": "ESNext",
