@@ -14,7 +14,7 @@ export class Mermaid {
   /**
    * Generates a Mermaid diagram as a string, removing the markdown code block syntax.
    */
-  asMermaid(
+  markdown(
     mermaidStyle: string = Mermaid.DefaultMermaidStyle,
     maxLenComment: number = 60,
     maxComment: number = 30

@@ -1,27 +1,20 @@
-import { Mermaid } from "./lib/mermaid";
-import { PlantUML } from "./lib/plantUML";
-import { parseTelemetry, parseCalls } from "./lib/parse";
+import { LogicFirst } from './lib/logicFirst'
 import fs from 'fs'
-import { C4 } from "./lib/c4";
 
 // Main function
 async function main() {
-  const calls = await parseTelemetry("./traces.json")
-  console.log(`${calls.length} calls: ${JSON.stringify(calls, null, 2)}`)
+  const logicFirst = await LogicFirst.fromOpenTelemetryFile("./traces.json")
 
-  const messages = await parseCalls("./traces.json")
-  console.log(`\n${messages.length} messages: ${JSON.stringify(messages, null, 2)}`)
-
-  const mermaidDiagram = new Mermaid(calls).asMermaid();
+  const mermaidDiagram = logicFirst.mermaid.markdown();
   fs.writeFileSync('mermaid.md', mermaidDiagram);
 
-
-  const plant = new PlantUML(calls).diagram("App");
+  const plant = logicFirst.plantUML.diagram("App");
   fs.writeFileSync('plant.puml', plant);
 
-  const c4 = new C4(calls).diagram();
+  const c4 = logicFirst.c4.diagram();
   fs.writeFileSync('diagram.c4', c4);
 }
 
 // Run the main function
 main().catch(console.error);
+
