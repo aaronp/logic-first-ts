@@ -56,7 +56,7 @@ const tracer = () : Tracer => {
  * @param thunk - A function to execute within the span.
  * @returns The result of the `thunk` function.
  */
-export const traced = <T>(from : Container, to :Container, name: string, args: any[], thunk: () => T): T => {
+export const traceSpan = <T>(from : Container, to :Container, name: string, args: any[], thunk: () => T): T => {
   
   // Start a new span
   return tracer().startActiveSpan(name, (span: Span) => {

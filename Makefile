@@ -1,5 +1,7 @@
 run:
 	bun run index.ts
+build:
+	bun run build
 diagram:
 	bun run flow.ts
 listen:

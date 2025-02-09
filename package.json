@@ -3,10 +3,11 @@
   "module": "index.ts",
   "type": "module",
   "scripts": {
-    "build": "bunx tsup"
+    "build": "bunx esbuild lib/index.ts --bundle --outfile=dist/index.js --format=esm --platform=node --sourcemap"
   },
   "devDependencies": {
     "@types/bun": "latest",
+    "esbuild": "^0.25.0",
     "tsup": "^8.3.6"
   },
   "peerDependencies": {
@@ -18,5 +19,15 @@
     "@opentelemetry/instrumentation-bunyan": "^0.45.0",
     "@opentelemetry/sdk-trace-base": "^1.30.1",
     "@opentelemetry/sdk-trace-node": "^1.30.1"
-  }
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/aaronp/logic-first-ts.git"
+  },
+  "keywords": ["typescript", "library", "bun", "logic-first", "logic", "c4", "mermaid", "plantuml"],
+  "author": "Aaron Pritzlaff",
+  "license": "Apache-2.0"
 }

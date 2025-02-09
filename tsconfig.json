@@ -4,6 +4,7 @@
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
+    "rootDir": "lib",
     // Enable latest features
     "lib": ["ESNext", "DOM"],
     "target": "ESNext",
@@ -27,5 +28,6 @@
     "noUnusedLocals": false,
     "noUnusedParameters": false,
     "noPropertyAccessFromIndexSignature": false
-  }
+  },
+  "include": ["lib"]
 }

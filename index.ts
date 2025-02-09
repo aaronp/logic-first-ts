@@ -1,4 +1,4 @@
-import { traced } from "./lib/tracer";
+import { traceSpan } from "./lib/tracer";
 import { newPerson, newSystem } from "./lib/telemetry";
 
 const person = newPerson('app', 'dave')
@@ -7,7 +7,7 @@ const goog = newSystem('app', 'google')
 
 // Function to perform a Google search
 async function googleSearch(query: string) {
-  const span = await traced(sys, goog, 'googleSearch', [query], async () => {
+  const span = await traceSpan(sys, goog, 'googleSearch', [query], async () => {
     const response = await fetch(`https://www.google.com/search?q=${encodeURIComponent(query)}`);
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
@@ -21,7 +21,7 @@ async function googleSearch(query: string) {
 
 // Function to parse user input and split it into words
 async function parseInput(input: string) {
-  return await traced(person, sys, 'parse', [input], async () => await googleSearch(input));
+  return await traceSpan(person, sys, 'parse', [input], async () => await googleSearch(input));
 }
 
 // Main function
