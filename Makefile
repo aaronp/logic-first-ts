@@ -2,6 +2,8 @@ run:
 	bun run index.ts
 build:
 	bun run build
+publish: build
+	npm publish --access public
 diagram:
 	bun run flow.ts
 listen:
