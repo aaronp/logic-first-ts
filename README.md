@@ -3,13 +3,22 @@
 This project produces a 'logic-first' library used to add particular open-telemetry instrumentation to your application 
 in order to generate architecture diagrams (e.g. C4 or mermaid/planuml sequence diagrams) from your code.
 
-## Why?
-By generating your diagrams from your code, you:
+# About
+"Logic-First" is about generating your diagrams from your code, you:
  * eliminate drift. You don't have to answer "does the software do what the diagram says it's doing?" because if your code changes, your diagrams change
  * easily covers non-happy path scenarios. E.g. what does the software do when operations fail?
  * makes keeping accurate documentation easier - you 'get it for free'
 
-## Usage
+# Examples
+
+see the ./example directory in this repo
+
+# Releases
+ * [0.0.3](./releases/0-0-3.md) 
+ * [0.0.2](./releases/0-0-2.md) 
+ * [0.0.1](./releases/0-0-1.md)
+
+# Usage
 
 Using this library consists of two parts:
  * instrumenting your application calls

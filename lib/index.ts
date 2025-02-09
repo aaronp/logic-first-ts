@@ -6,3 +6,4 @@ export * from "./telemetry";
 export * from "./sendMessage";
 export * from "./tracer";
 export * from "./colors";
+export * from "./logicFirst"
