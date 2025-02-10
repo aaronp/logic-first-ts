@@ -1,6 +1,11 @@
 import { AtomicCounter } from "./callId";
 import { LogicFirst } from "./logicFirst";
-import type { CallResponse, CallSite, CompletedCall, Container } from "./telemetry";
+import type {
+  CallResponse,
+  CallSite,
+  CompletedCall,
+  Container,
+} from "./telemetry";
 
 function getTimestampInNanoseconds(): bigint {
   const time = process.hrtime(); // Returns [seconds, nanoseconds]
@@ -11,10 +16,10 @@ function getTimestampInNanoseconds(): bigint {
 
 export class Tracer {
   private completedCalls: CompletedCall[] = [];
-  
-  private static _instance : Tracer | null = null;
 
-  public static instance() : Tracer {
+  private static _instance: Tracer | null = null;
+
+  public static instance(): Tracer {
     if (!Tracer._instance) {
       Tracer._instance = new Tracer();
     }
@@ -22,15 +27,15 @@ export class Tracer {
   }
 
   // Function to trace a block of code
-  public trace<T>(
+  public async trace<T>(
     from: Container,
     to: Container,
     name: string,
     args: any[],
     thunk: () => T
-  ): T {
+  ): Promise<T> {
     const callId = AtomicCounter.getInstance().increment();
-    const invocationTimestamp = getTimestampInNanoseconds()
+    const invocationTimestamp = getTimestampInNanoseconds();
 
     // Create the CallSite
     const callSite: CallSite = {
@@ -47,7 +52,8 @@ export class Tracer {
 
     try {
       // Execute the thunk (the block of code to be traced)
-      result = thunk();
+      const value = thunk();
+      result = value instanceof Promise ? await value : value;
 
       // If successful, create a "Completed" response
       const response: CallResponse = {
@@ -58,7 +64,6 @@ export class Tracer {
       };
 
       this.addCall(callId, callSite, response);
-      
     } catch (error) {
       // If an error occurs, create an "Error" response
       const response: CallResponse = {
@@ -76,7 +81,7 @@ export class Tracer {
     return result;
   }
 
-  addCall(callId : number, invocation : CallSite, response :CallResponse) {
+  addCall(callId: number, invocation: CallSite, response: CallResponse) {
     // Create the CompletedCall object
     const completedCall: CompletedCall = {
       callId,

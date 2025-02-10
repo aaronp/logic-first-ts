@@ -130,7 +130,7 @@ ${this.colors(settings.colorMap || new Map())}
    * Gets the name of the dynamic view.
    */
   private get dynamicName(): string {
-    return C4.asSystem(this.systems[0].name);
+    return C4.asSystem(this.systems.length > 0 ? this.systems[0].name : "");
   }
 
   /**
@@ -154,9 +154,13 @@ ${this.colors(settings.colorMap || new Map())}
         const operationsString =
           operations.length === 1
             ? operations[0]
-            : `${operations.slice(0, -1).join(", ")} and ${operations[operations.length - 1]}`;
+            : `${operations.slice(0, -1).join(", ")} and ${
+                operations[operations.length - 1]
+              }`;
 
-        return `        ${C4.asContainer(from)} -> ${C4.asContainer(to)} "${operationsString}"`;
+        return `        ${C4.asContainer(from)} -> ${C4.asContainer(
+          to
+        )} "${operationsString}"`;
       })
       .join("\n");
   }
@@ -170,12 +174,20 @@ ${this.colors(settings.colorMap || new Map())}
         (system) => `
         systemContext ${C4.asSystem(system.name)} "${system.name}" {
             include *
-            ${style.layoutByName?.get(system.name) || style.defaultSystemLayout || "autolayout lr"}
+            ${
+              style.layoutByName?.get(system.name) ||
+              style.defaultSystemLayout ||
+              "autolayout lr"
+            }
         }
 
         container ${C4.asSystem(system.name)} {
             include *
-            ${style.layoutByName?.get(system.name) || style.defaultContainerLayout || "autolayout lr"}
+            ${
+              style.layoutByName?.get(system.name) ||
+              style.defaultContainerLayout ||
+              "autolayout lr"
+            }
         }`
       )
       .join("\n");
@@ -201,119 +213,141 @@ ${this.colors(settings.colorMap || new Map())}
   }
 }
 
-
 /**
  * Utility class for generating C4 model diagrams.
  */
 export namespace C4 {
-    export interface ElementStyle {
-      bgColor: string;
-      color: string;
-    }
-  
-    export interface Style {
-      style?: string;
-      colorMap?: Map<string, ElementStyle>;
-      layoutByName?: Map<string, string>;
-      defaultSystemLayout?: string;
-      defaultContainerLayout?: string;
-      dynamicLayout?: string;
-    }
-  
+  export interface ElementStyle {
+    bgColor: string;
+    color: string;
+  }
+
+  export interface Style {
+    style?: string;
+    colorMap?: Map<string, ElementStyle>;
+    layoutByName?: Map<string, string>;
+    defaultSystemLayout?: string;
+    defaultContainerLayout?: string;
+    dynamicLayout?: string;
+  }
+
+  /**
+   * Represents a software system in the C4 model.
+   */
+  export class SoftwareSystem {
+    constructor(
+      public name: string,
+      public callsIntoThisSystem: CompletedCall[],
+      public callFromThisSystem: CompletedCall[]
+    ) {}
+
     /**
-     * Represents a software system in the C4 model.
+     * Filters calls to ensure uniqueness by source and operation.
      */
-    export class SoftwareSystem {
-      constructor(
-        public name: string,
-        public callsIntoThisSystem: CompletedCall[],
-        public callFromThisSystem: CompletedCall[]
-      ) {}
-  
-      /**
-       * Filters calls to ensure uniqueness by source and operation.
-       */
-      private distinctBySource(calls: CompletedCall[]): CompletedCall[] {
-        return calls.reduce((seq, next) => {
-          if (seq.some((c) => c.invocation.action.source === next.invocation.action.source && c.invocation.action.operation === next.invocation.action.operation)) {
-            return seq;
-          }
-          return [...seq, next];
-        }, [] as CompletedCall[]);
-      }
-  
-      /**
-       * Filters calls to ensure uniqueness by target and operation.
-       */
-      private distinctByTarget(calls: CompletedCall[]): CompletedCall[] {
-        return calls.reduce((seq, next) => {
-          if (seq.some((c) => c.invocation.action.target === next.invocation.action.target && c.invocation.action.operation === next.invocation.action.operation)) {
-            return seq;
-          }
-          return [...seq, next];
-        }, [] as CompletedCall[]);
-      }
-  
-      /**
-       * Groups calls by source container.
-       */
-      private get outgoingContainerCalls(): Map<Container, CompletedCall[]> {
-        const grouped = new Map<Container, CompletedCall[]>();
-        this.callFromThisSystem.forEach((call) => {
-          const existing = grouped.get(call.invocation.action.source) || [];
-          grouped.set(call.invocation.action.source, [...existing, call]);
-        });
-        return new Map(
-          Array.from(grouped.entries()).map(([key, value]) => [key, this.distinctByTarget(value)])
-        );
-      }
-  
-      /**
-       * Groups calls by target container.
-       */
-      private get incomingContainerCalls(): Map<Container, CompletedCall[]> {
-        const grouped = new Map<Container, CompletedCall[]>();
-        this.callsIntoThisSystem.forEach((call) => {
-          const existing = grouped.get(call.invocation.action.target) || [];
-          grouped.set(call.invocation.action.target, [...existing, call]);
-        });
-        return new Map(
-          Array.from(grouped.entries()).map(([key, value]) => [key, this.distinctBySource(value)])
-        );
-      }
-  
-      /**
-       * Gets all containers involved in this system.
-       */
-      private get containers(): Set<Container> {
-        return new Set([...this.outgoingContainerCalls.keys(), ...this.incomingContainerCalls.keys()]);
-      }
-  
-      /**
-       * Converts this software system to a C4 model string.
-       */
-      asC4(): string {
-        const declarations = Array.from(this.containers)
-          .map(
-            (container) => `
-               ${asContainer(container.label)} = container "${container.label}" {
+    private distinctBySource(calls: CompletedCall[]): CompletedCall[] {
+      return calls.reduce((seq, next) => {
+        if (
+          seq.some(
+            (c) =>
+              c.invocation.action.source === next.invocation.action.source &&
+              c.invocation.action.operation === next.invocation.action.operation
+          )
+        ) {
+          return seq;
+        }
+        return [...seq, next];
+      }, [] as CompletedCall[]);
+    }
+
+    /**
+     * Filters calls to ensure uniqueness by target and operation.
+     */
+    private distinctByTarget(calls: CompletedCall[]): CompletedCall[] {
+      return calls.reduce((seq, next) => {
+        if (
+          seq.some(
+            (c) =>
+              c.invocation.action.target === next.invocation.action.target &&
+              c.invocation.action.operation === next.invocation.action.operation
+          )
+        ) {
+          return seq;
+        }
+        return [...seq, next];
+      }, [] as CompletedCall[]);
+    }
+
+    /**
+     * Groups calls by source container.
+     */
+    private get outgoingContainerCalls(): Map<Container, CompletedCall[]> {
+      const grouped = new Map<Container, CompletedCall[]>();
+      this.callFromThisSystem.forEach((call) => {
+        const existing = grouped.get(call.invocation.action.source) || [];
+        grouped.set(call.invocation.action.source, [...existing, call]);
+      });
+      return new Map(
+        Array.from(grouped.entries()).map(([key, value]) => [
+          key,
+          this.distinctByTarget(value),
+        ])
+      );
+    }
+
+    /**
+     * Groups calls by target container.
+     */
+    private get incomingContainerCalls(): Map<Container, CompletedCall[]> {
+      const grouped = new Map<Container, CompletedCall[]>();
+      this.callsIntoThisSystem.forEach((call) => {
+        const existing = grouped.get(call.invocation.action.target) || [];
+        grouped.set(call.invocation.action.target, [...existing, call]);
+      });
+      return new Map(
+        Array.from(grouped.entries()).map(([key, value]) => [
+          key,
+          this.distinctBySource(value),
+        ])
+      );
+    }
+
+    /**
+     * Gets all containers involved in this system.
+     */
+    private get containers(): Set<Container> {
+      return new Set([
+        ...this.outgoingContainerCalls.keys(),
+        ...this.incomingContainerCalls.keys(),
+      ]);
+    }
+
+    /**
+     * Converts this software system to a C4 model string.
+     */
+    asC4(): string {
+      const declarations = Array.from(this.containers)
+        .map(
+          (container) => `
+               ${asContainer(container.label)} = container "${
+            container.label
+          }" {
                  tags "${container.type}" "${container.label}"
                }`
-          )
-          .join("\n");
-  
-        return `
+        )
+        .join("\n");
+
+      return `
       ${asSystem(this.name)} = softwareSystem "${this.name}" {
          tags "${this.name}"
   ${declarations}
       }`;
-      }
     }
-  
-    /**
-     * Default C4 style.
-     */
-    export const DefaultStyle = `
+  }
+
+  /**
+   * Default C4 style.
+   */
+  export const DefaultStyle = `
               element "Element" {
                   color #ffffff
               }
@@ -360,28 +394,27 @@ export namespace C4 {
               element "Database" {
                   shape cylinder
               }`;
-  
-    /**
-     * Extension methods for strings.
-     */
-    export function asIdentifier(text: string): string {
-      return text.replace(/\s+/g, "");
-    }
-  
-    export function asPerson(text: string): string {
-      return `${asIdentifier(text)}Person`;
-    }
-  
-    export function asSystem(text: string): string {
-      return `${asIdentifier(text)}System`;
-    }
-  
-    export function asContainer(text: string): string {
-      return `${asIdentifier(text)}Container`;
-    }
-  
-    export function asComponent(text: string): string {
-      return `${asIdentifier(text)}Component`;
-    }
+
+  /**
+   * Extension methods for strings.
+   */
+  export function asIdentifier(text: string): string {
+    return text.replace(/\s+/g, "");
   }
-  
+
+  export function asPerson(text: string): string {
+    return `${asIdentifier(text)}Person`;
+  }
+
+  export function asSystem(text: string): string {
+    return `${asIdentifier(text)}System`;
+  }
+
+  export function asContainer(text: string): string {
+    return `${asIdentifier(text)}Container`;
+  }
+
+  export function asComponent(text: string): string {
+    return `${asIdentifier(text)}Component`;
+  }
+}

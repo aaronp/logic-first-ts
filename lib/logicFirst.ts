@@ -7,24 +7,23 @@ import type { CompletedCall } from "./telemetry";
  * Wraps parsed telemetry data as 'CompletedCall's, which can then be represented as C4, Mermaid, PlantUML, etc docs
  */
 export class LogicFirst {
-    private calls: CompletedCall[];
-  
-    constructor(calls: CompletedCall[]) {
-      this.calls = calls;
-    }
-  
-    /**
-     * Converts the logic to a C4 model representation.
-     */
-    public get c4() : C4 {
-        return  new C4(this.calls);
-    }
+  public calls: CompletedCall[];
 
-    public get plantUML() : PlantUML {
-        return new PlantUML(this.calls);
-    }
-    public get mermaid() : Mermaid {
-        return new Mermaid(this.calls);
-    }
+  constructor(calls: CompletedCall[]) {
+    this.calls = calls;
   }
-  
+
+  /**
+   * Converts the logic to a C4 model representation.
+   */
+  public get c4(): C4 {
+    return new C4(this.calls);
+  }
+
+  public get plantUML(): PlantUML {
+    return new PlantUML(this.calls);
+  }
+  public get mermaid(): Mermaid {
+    return new Mermaid(this.calls);
+  }
+}
