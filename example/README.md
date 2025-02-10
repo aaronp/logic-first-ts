@@ -1,9 +1,6 @@
 # An example for using the 'logic-first' library
 
-You use `make listen` to start the open-telemetry listener, 
-then `make run` to run the app, which should create a `./traces.json` file locally.
-
-Then you can run `make diagram` to create local plantuml, mermaid, and c4 diagrams from that app.
+You use `make run` run this app which creates local plantuml, mermaid, and c4 diagrams from the app.
 
 To see their output beyond that markup form, you can:
 

@@ -2,7 +2,7 @@
 export type ContainerType = "System" | "Database" | "Job" | "Person"
 
 // epoch in nanoseconds
-export type Timestamp = number;
+export type Timestamp = bigint;
 
 
 // Action class
@@ -60,7 +60,15 @@ export type CompletedCall = {
 
 export const endTimestamp = (cc :CompletedCall) => timestampForResponse(cc.response)
 
-export const timestampForCall = (c : CompletedCall) => c.invocation.timestamp
+const isSafeBigIntToNumber = (value: bigint): boolean => value <= BigInt(Number.MAX_SAFE_INTEGER) && value >= BigInt(Number.MIN_SAFE_INTEGER)
+const asNumber = (x : bigint) : number => {
+  if (!isSafeBigIntToNumber(x)) {
+    throw new Error(`Cannot convert ${x} to a number`)
+  }
+  return Number(x)
+}
+
+export const timestampForCall = (c : CompletedCall) => asNumber(c.invocation.timestamp)
 
 export type Container = {
     type: ContainerType;
@@ -192,4 +200,8 @@ export function parseOpenTelemetryJson(json: any): CompletedCall[] {
     });
   
     return completedCalls.sort((a, b) => a.invocation.timestamp - b.invocation.timestamp);
+  }
+
+  function trace<T>(from : Container, to :Container, name: string, args: any[], thunk: () => T): T  {
+
   }

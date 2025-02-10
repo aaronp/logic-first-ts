@@ -1,6 +1,6 @@
 # logic-first
 
-This project produces a 'logic-first' library used to add particular open-telemetry instrumentation to your application 
+This project produces a 'logic-first' library used to instrument your application 
 in order to generate architecture diagrams (e.g. C4 or mermaid/planuml sequence diagrams) from your code.
 
 # About
@@ -14,6 +14,7 @@ in order to generate architecture diagrams (e.g. C4 or mermaid/planuml sequence 
 see the ./example directory in this repo
 
 # Releases
+ * [0.0.4](./releases/0-0-4.md) 
  * [0.0.3](./releases/0-0-3.md) 
  * [0.0.2](./releases/0-0-2.md) 
  * [0.0.1](./releases/0-0-1.md)
@@ -22,7 +23,7 @@ see the ./example directory in this repo
 
 Using this library consists of two parts:
  * instrumenting your application calls
- * parsing the open telemetry files from running your application to produce useful diagrams
+ * producing useful diagrams from the traced calls
 
 
 ## Instrumentation

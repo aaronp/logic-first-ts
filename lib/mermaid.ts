@@ -1,7 +1,6 @@
 import { qualified, type CompletedCall } from "./telemetry"; // Assuming you have this type
 import { SendMessage } from "./sendMessage"; // Assuming you have this type
 import { Colors } from "./colors";
-
 /**
  * Utility class for generating Mermaid sequence diagrams.
  */
