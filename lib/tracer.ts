@@ -32,7 +32,8 @@ export class Tracer {
     to: Container,
     name: string,
     args: any[],
-    thunk: () => T
+    thunk: () => Promise<T>,
+    formatResult?: (result: T) => string
   ): Promise<T> {
     const callId = AtomicCounter.getInstance().increment();
     const invocationTimestamp = getTimestampInNanoseconds();
@@ -55,12 +56,16 @@ export class Tracer {
       const value = thunk();
       result = value instanceof Promise ? await value : value;
 
+      const resultComment = formatResult
+        ? formatResult(result)
+        : JSON.stringify(result);
+
       // If successful, create a "Completed" response
       const response: CallResponse = {
         type: "Completed",
         operationId: callId,
         timestamp: getTimestampInNanoseconds(),
-        result: result,
+        result: resultComment,
       };
 
       this.addCall(callId, callSite, response);
