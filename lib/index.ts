@@ -1,4 +1,3 @@
-export * from "./parse";
 export * from "./c4";
 export * from "./mermaid";
 export * from "./telemetry";

@@ -1,6 +1,5 @@
 import { C4 } from "./c4";
 import { Mermaid } from "./mermaid";
-import { parseTelemetry } from "./parse";
 import { PlantUML } from "./plantUML";
 import type { CompletedCall } from "./telemetry";
 
