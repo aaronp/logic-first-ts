@@ -1,4 +1,4 @@
-import { durationOfCall, endTimestamp, qualified, timestampForCall, type CompletedCall, type Container, type Timestamp } from "./telemetry";
+import { asTimestamp, durationOfCall, endTimestamp, qualified, timestampForCall, type CompletedCall, type Container, type Timestamp } from "./telemetry";
 
 // Duration type (assuming it's a number representing milliseconds)
 type Duration = number;
@@ -25,7 +25,7 @@ export class SendMessage {
    * Returns the timestamp as a JavaScript Date object.
    */
   get atDateTime(): Date {
-    return new Date(this.timestamp * 1000);
+    return new Date(asTimestamp(this.timestamp));
   }
 
   /**
@@ -62,7 +62,7 @@ export class SendMessage {
    * Returns the end timestamp of the message.
    */
   get endTimestamp(): Timestamp {
-    return this.timestamp + (this.duration * 1e6); // Convert duration to nanoseconds
+    return this.timestamp + BigInt(this.duration * 1e6); // Convert duration to nanoseconds
   }
 
   /**
@@ -227,7 +227,7 @@ export namespace SendMessage {
       const source = msg.call.invocation.action.source
       const target = msg.call.invocation.action.target
       if (msg.type === MsgType.Start) {
-        const timestamp = timestampForCall(msg.call)
+        const timestamp = msg.call.invocation.timestamp
         const isSelfCall = source === target;
         const isSynchronous = messages[i + 1]?.type === MsgType.End && messages[i + 1].call.callId === msg.call.callId;
 
@@ -237,13 +237,14 @@ export namespace SendMessage {
         if (elideThisMessage) {
           return [];
         } else {
+          const duration = durationOfCall(msg.call)
           return [
             new SendMessage(
               msg.call.callId,
               source,
               target,
               timestamp,
-              durationOfCall(msg.call) || Infinity,
+              duration ? asTimestamp(duration) : Infinity,
               arrow,
               msg.call.invocation.action.operation,
               msg.call.invocation.inputs
@@ -258,6 +259,7 @@ export namespace SendMessage {
           : commentForResult(msg.call);
 
         const arrow = isSynchronous ? "-->>" : "-->>-";
+        const duration = durationOfCall(msg.call)
 
         return [
           new SendMessage(
@@ -265,7 +267,7 @@ export namespace SendMessage {
             target,
             source,
             msg.endTimestamp!,
-            durationOfCall(msg.call) || Infinity,
+            duration ? asTimestamp(duration) : Infinity,
             arrow,
             msg.call.invocation.action.operation,
             msg.call.invocation.inputs,
